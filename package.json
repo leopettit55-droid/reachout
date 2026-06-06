@@ -1,0 +1,12 @@
+{
+  "name": "reachout",
+  "version": "1.0.0",
+  "description": "Smart networking follow-up app",
+  "scripts": {
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "start": "NODE_ENV=production node server/index.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

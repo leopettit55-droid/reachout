@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reachout — Prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: {
+            950: '#07101f', 900: '#0f1729', 800: '#141f36',
+            700: '#1a2544', 600: '#1e2d52', 500: '#243460',
+            400: '#2a3a6e', 300: '#3a4f85',
+          }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0f1729; }
+  ::-webkit-scrollbar-thumb { background: #2a3a6e; border-radius: 9999px; }
+  .fade-in { animation: fadeIn .2s ease-out; }
+  .slide-up { animation: slideUp .25s ease-out; }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  @keyframes slideUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+  .card { background:#141f36; border:1px solid #1a2544; border-radius:12px; }
+  .card-hover { background:#141f36; border:1px solid #1a2544; border-radius:12px; cursor:pointer; transition: all .2s; }
+  .card-hover:hover { border-color: rgba(59,130,246,.4); box-shadow: 0 4px 24px rgba(59,130,246,.06); transform: translateY(-1px); }
+  .active-nav { background:rgba(59,130,246,.12); color:#93c5fd; border:1px solid rgba(59,130,246,.2); }
+  .inactive-nav { color:#94a3b8; border:1px solid transparent; }
+  .inactive-nav:hover { background:#1a2544; color:#e2e8f0; }
+  .btn-primary { background:#2563eb; color:white; border-radius:8px; padding:8px 16px; font-weight:500; display:inline-flex; align-items:center; gap:6px; transition:background .15s; font-size:14px; border:none; cursor:pointer; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-secondary { background:#1a2544; border:1px solid #2a3a6e; color:#cbd5e1; border-radius:8px; padding:7px 14px; font-weight:500; display:inline-flex; align-items:center; gap:6px; transition:all .15s; font-size:13px; cursor:pointer; }
+  .btn-secondary:hover { background:#1e2d52; color:#f1f5f9; }
+  .btn-ghost { background:transparent; color:#94a3b8; border-radius:6px; padding:5px 10px; font-weight:500; display:inline-flex; align-items:center; gap:5px; transition:all .15s; font-size:12px; cursor:pointer; border:none; }
+  .btn-ghost:hover { background:#1a2544; color:#e2e8f0; }
+  input, textarea, select { background:#1a2544; border:1px solid #2a3a6e; color:#f1f5f9; border-radius:8px; padding:8px 12px; width:100%; font-size:14px; outline:none; transition:border-color .15s; }
+  input:focus, textarea:focus, select:focus { border-color:#3b82f6; }
+  input::placeholder, textarea::placeholder { color:#475569; }
+  label.lbl { display:block; font-size:13px; font-weight:500; color:#cbd5e1; margin-bottom:6px; }
+  .toast { position:fixed; bottom:24px; right:24px; background:#1a2544; border:1px solid #2a3a6e; color:#f1f5f9; padding:12px 18px; border-radius:10px; font-size:14px; display:flex; align-items:center; gap:8px; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,.4); animation: slideUp .25s ease-out; }
+</style>
+</head>
+<body class="bg-navy-900 text-slate-100 min-h-screen">
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- App shell -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-60 flex flex-col bg-navy-950 border-r border-navy-700 flex-shrink-0">
+    <!-- Logo -->
+    <div class="flex items-center gap-2.5 p-5 border-b border-navy-700">
+      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <span class="text-lg font-bold text-white tracking-tight">Reachout</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5">
+      <button onclick="showPage('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all active-nav">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Dashboard
+      </button>
+      <button onclick="showPage('events')" id="nav-events" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all inactive-nav">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
+      </button>
+      <button onclick="showPage('analytics')" id="nav-analytics" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all inactive-nav">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
+      <button onclick="showPage('settings')" id="nav-settings" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all inactive-nav">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-navy-700">
+      <button onclick="showPage('add')" class="btn-primary w-full justify-center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Contact
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 overflow-y-auto">
+
+    <!-- ====== DASHBOARD ====== -->
+    <div id="page-dashboard" class="max-w-6xl mx-auto p-8 fade-in">
+      <div class="flex items-center justify-between mb-7">
+        <div>
+          <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+          <p class="text-slate-400 text-sm mt-0.5">6 contacts tracked</p>
+        </div>
+        <button onclick="showPage('add')" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add Contact
+        </button>
+      </div>
+
+      <!-- Needs follow-up -->
+      <div class="mb-8">
+        <div class="flex items-center gap-2 mb-3">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="text-sm font-semibold text-amber-400 uppercase tracking-wide">Needs Follow-up (2)</span>
+          <span class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full">1 urgent</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <!-- Urgent card -->
+          <div onclick="showContact('james')" class="card-hover p-5 slide-up" style="border-color:rgba(239,68,68,.3)">
+            <div class="flex items-center gap-1.5 text-red-400 text-xs font-medium mb-3">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              9 days — urgent follow-up needed
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-full bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center text-white font-semibold text-sm ring-2" style="ring-color:#1a2544">JM</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <p class="font-semibold text-slate-100 text-sm">James Mitchell</p>
+                    <p class="text-slate-400 text-xs mt-0.5">CTO · Stripe</p>
+                  </div>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
+                  </span>
+                </div>
+                <div class="mt-2 flex gap-3 text-xs text-slate-500">
+                  <span>London Tech Week</span>
+                  <span>9d ago</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Normal needs follow-up -->
+          <div class="card-hover p-5 slide-up">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center text-white font-semibold text-sm">SR</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <p class="font-semibold text-slate-100 text-sm">Sophie Raines</p>
+                    <p class="text-slate-400 text-xs mt-0.5">Product Lead · Figma</p>
+                  </div>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
+                  </span>
+                </div>
+                <div class="mt-2 flex gap-3 text-xs text-slate-500">
+                  <span>SaaStr Annual</span>
+                  <span>5d ago</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All contacts -->
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-xs text-slate-500 font-medium uppercase tracking-wide">All contacts</span>
+        <div class="flex gap-2 ml-2">
+          <button class="px-3 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">All</button>
+          <button class="px-3 py-1 rounded-full text-xs font-medium bg-navy-700 text-slate-400 border border-navy-500 hover:text-slate-200 transition-colors">Pending</button>
+          <button class="px-3 py-1 rounded-full text-xs font-medium bg-navy-700 text-slate-400 border border-navy-500 hover:text-slate-200 transition-colors">Message Sent</button>
+          <button class="px-3 py-1 rounded-full text-xs font-medium bg-navy-700 text-slate-400 border border-navy-500 hover:text-slate-200 transition-colors">Replied</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <!-- Contact 1 -->
+        <div onclick="showContact('james')" class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center text-white font-semibold text-sm">JM</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">James Mitchell</p><p class="text-slate-400 text-xs mt-0.5 flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>CTO · Stripe</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>London Tech Week</span><span>9d ago</span></div>
+              <div class="mt-2 flex items-center gap-2"><span class="text-blue-400/60 text-xs flex items-center gap-0.5"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact 2 -->
+        <div class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center text-white font-semibold text-sm">SR</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">Sophie Raines</p><p class="text-slate-400 text-xs mt-0.5">Product Lead · Figma</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>SaaStr Annual</span><span>5d ago</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact 3 - Message Sent -->
+        <div class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold text-sm">AK</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">Arjun Kapoor</p><p class="text-slate-400 text-xs mt-0.5">Founder · Vercel</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Message Sent</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>London Tech Week</span><span>7d ago</span></div>
+              <div class="mt-2"><span class="text-emerald-400/70 text-xs flex items-center gap-0.5"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 2 sent</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact 4 - Replied -->
+        <div class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center text-white font-semibold text-sm">ML</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">Maria Lopez</p><p class="text-slate-400 text-xs mt-0.5">VP Eng · Linear</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Replied</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>YC Demo Day</span><span>3d ago</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact 5 -->
+        <div class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white font-semibold text-sm">TN</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">Tom Nakamura</p><p class="text-slate-400 text-xs mt-0.5">Partner · a16z</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>In Progress</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>SaaStr Annual</span><span>1d ago</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact 6 -->
+        <div class="card-hover p-5 slide-up">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold text-sm">PW</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between"><div><p class="font-semibold text-slate-100 text-sm">Priya Watts</p><p class="text-slate-400 text-xs mt-0.5">Design Lead · Notion</p></div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Message Sent</span></div>
+              <div class="mt-2 flex gap-3 text-xs text-slate-500"><span>London Tech Week</span><span>8d ago</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== CONTACT DETAIL ====== -->
+    <div id="page-contact" class="max-w-5xl mx-auto p-8 fade-in hidden">
+      <div class="flex items-center gap-3 mb-6">
+        <button onclick="showPage('dashboard')" class="text-slate-400 hover:text-white p-1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span class="flex-1"></span>
+        <button class="btn-ghost text-xs"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+      </div>
+
+      <!-- Contact header -->
+      <div class="card p-6 mb-6 slide-up">
+        <div class="flex items-start gap-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center text-white font-bold text-xl ring-2" style="ring-color:#1a2544">JM</div>
+          <div class="flex-1">
+            <div class="flex items-start gap-3 flex-wrap">
+              <div>
+                <h1 class="text-xl font-bold text-white">James Mitchell</h1>
+                <p class="text-slate-400 text-sm mt-0.5">CTO · Stripe</p>
+              </div>
+              <span class="ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending</span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-4 text-sm text-slate-400">
+              <span class="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>London Tech Week</span>
+              <span class="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>May 28, 2026 <span class="text-xs text-red-400">(9 days ago)</span></span>
+            </div>
+            <div class="mt-2 flex gap-3">
+              <a href="#" class="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</a>
+              <a href="#" class="text-slate-400 hover:text-slate-200 text-sm flex items-center gap-1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> j.mitchell@stripe.com</a>
+            </div>
+            <div class="mt-4 pt-4 border-t border-navy-700">
+              <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Conversation notes</p>
+              <p class="text-slate-300 text-sm leading-relaxed">Talked about Stripe's new AI-powered fraud detection system he's building. Really passionate about using LLMs for real-time decision making. Mentioned they're hiring senior ML engineers. Also bonded over being Leeds United fans — he grew up in Leeds. Gave me his card and said to reach out about a potential partnership.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages section -->
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-100">Follow-up Messages</h2>
+        <button onclick="simulateGenerate()" id="gen-btn" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate Messages
+        </button>
+      </div>
+
+      <!-- Empty state before generate -->
+      <div id="msg-empty" class="card p-10 text-center mb-4">
+        <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <p class="text-slate-300 font-medium mb-1">No messages generated yet</p>
+        <p class="text-slate-500 text-sm">Click "Generate Messages" to create personalised AI follow-ups.</p>
+      </div>
+
+      <!-- Messages grid (hidden until generated) -->
+      <div id="msg-grid" class="grid grid-cols-3 gap-4 hidden">
+        <!-- LinkedIn Connection -->
+        <div class="card p-5" style="background:linear-gradient(to bottom, rgba(59,130,246,.04), transparent)">
+          <div class="flex items-center gap-2 mb-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#60a5fa"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            <span class="font-medium text-slate-200 text-sm">LinkedIn Connection</span>
+            <span class="ml-auto text-xs text-slate-500">247/300</span>
+          </div>
+          <div class="text-slate-300 text-sm leading-relaxed bg-navy-900/50 rounded-lg p-3 min-h-20">
+            Hi James — great chatting at London Tech Week about Stripe's LLM fraud detection work. The real-time decision-making angle is genuinely fascinating. Would love to stay connected and swap notes on the ML engineering space.
+          </div>
+          <div class="flex items-center gap-1.5 mt-3">
+            <button onclick="copyMsg(this)" class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+            <button class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+            <button onclick="simulateGenerate()" class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Regen</button>
+            <button onclick="markSent(this)" class="btn-ghost text-xs" style="color:#34d399"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Mark sent</button>
+          </div>
+        </div>
+
+        <!-- LinkedIn DM -->
+        <div class="card p-5" style="background:linear-gradient(to bottom, rgba(14,165,233,.04), transparent)">
+          <div class="flex items-center gap-2 mb-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="font-medium text-slate-200 text-sm">LinkedIn Message</span>
+          </div>
+          <div class="text-slate-300 text-sm leading-relaxed bg-navy-900/50 rounded-lg p-3 min-h-20">
+            Hey James, really enjoyed our chat about the fraud detection work you're doing at Stripe. The way you're using LLMs for real-time decisions is a genuinely hard problem — curious how you're handling the latency constraints at scale.<br><br>Also wanted to say — fellow Leeds fan solidarity. The last few seasons have been character-building to say the least.<br><br>Would love to grab a coffee sometime and hear more about the ML engineering roles you mentioned. Happy to share what we're seeing on our side too.
+          </div>
+          <div class="flex items-center gap-1.5 mt-3">
+            <button onclick="copyMsg(this)" class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+            <button class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+            <button class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Regen</button>
+            <button onclick="markSent(this)" class="btn-ghost text-xs" style="color:#34d399"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Mark sent</button>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="card p-5" style="background:linear-gradient(to bottom, rgba(168,85,247,.04), transparent)">
+          <div class="flex items-center gap-2 mb-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span class="font-medium text-slate-200 text-sm">Follow-up Email</span>
+          </div>
+          <div class="text-slate-300 text-sm leading-relaxed bg-navy-900/50 rounded-lg p-3 min-h-20">
+            <p class="text-xs text-slate-500 mb-1.5 font-medium">Subject: Great meeting at London Tech Week — fraud detection + ML</p>
+            Hi James,<br><br>Really enjoyed our conversation at London Tech Week. The LLM-powered fraud detection system you're building sounds like exactly the kind of hard, interesting problem I love hearing about.<br><br>The bit about real-time decisions especially stuck with me — I'd love to hear how you're approaching the latency/accuracy tradeoff as you scale. We've hit some similar walls on our side and I imagine there's a lot we could compare notes on.<br><br>Up for a call sometime in the next few weeks?
+          </div>
+          <div class="flex items-center gap-1.5 mt-3">
+            <button onclick="copyMsg(this)" class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+            <button class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+            <button class="btn-ghost text-xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Regen</button>
+            <button onclick="markSent(this)" class="btn-ghost text-xs" style="color:#34d399"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Mark sent</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== ADD CONTACT ====== -->
+    <div id="page-add" class="max-w-2xl mx-auto p-8 fade-in hidden">
+      <div class="flex items-center gap-3 mb-6">
+        <button onclick="showPage('dashboard')" class="text-slate-400 hover:text-white p-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        <h1 class="text-2xl font-bold text-white">Add Contact</h1>
+      </div>
+      <div class="space-y-5">
+        <div class="card p-5 space-y-4">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Contact Info</h2>
+          <div><label class="lbl">Full Name *</label><input placeholder="Alex Johnson" /></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="lbl">Job Title</label><input placeholder="Product Manager" /></div>
+            <div><label class="lbl">Company</label><input placeholder="Acme Corp" /></div>
+          </div>
+        </div>
+        <div class="card p-5 space-y-4">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Where We Met</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="lbl">Event</label><select><option>London Tech Week 2026</option><option>SaaStr Annual</option><option>YC Demo Day</option></select></div>
+            <div><label class="lbl">Date Met</label><input type="date" value="2026-06-06" /></div>
+          </div>
+          <div><label class="lbl">Location / Notes</label><input placeholder="Main stage area, near the coffee stand..." /></div>
+        </div>
+        <div class="card p-5">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Conversation Notes</h2>
+          <label class="lbl">What did you talk about?</label>
+          <textarea style="min-height:110px;resize:none" placeholder="We discussed their new product launch, their challenges with developer tooling... The more detail here, the better the AI messages will be."></textarea>
+          <p class="text-xs text-slate-500 mt-1.5">The more detail here, the better the AI-generated messages will be.</p>
+        </div>
+        <div class="card p-5 space-y-4">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Contact Details</h2>
+          <div><label class="lbl">LinkedIn URL</label><input type="url" placeholder="https://linkedin.com/in/..." /></div>
+          <div><label class="lbl">Email</label><input type="email" placeholder="alex@company.com" /></div>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="showToast('✓ Contact added!', '#22c55e'); showPage('contact')" class="btn-primary">Add Contact</button>
+          <button onclick="showPage('dashboard')" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== ANALYTICS ====== -->
+    <div id="page-analytics" class="max-w-5xl mx-auto p-8 fade-in hidden">
+      <div class="flex items-center gap-3 mb-6">
+        <button onclick="showPage('analytics')" class="lg:hidden p-2 text-slate-400 hover:text-white"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div><h1 class="text-2xl font-bold text-white">Analytics</h1><p class="text-slate-400 text-sm mt-0.5">Your networking performance at a glance</p></div>
+      </div>
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="card p-5 slide-up"><div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><p class="text-slate-400 text-sm">Total contacts</p><p class="text-2xl font-bold text-white mt-0.5">24</p></div></div></div>
+        <div class="card p-5 slide-up"><div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><p class="text-slate-400 text-sm">Follow-up rate</p><p class="text-2xl font-bold text-emerald-400 mt-0.5">71%</p><p class="text-xs text-slate-500 mt-0.5">17 of 24 contacted</p></div></div></div>
+        <div class="card p-5 slide-up"><div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></div><div><p class="text-slate-400 text-sm">Reply rate</p><p class="text-2xl font-bold text-purple-400 mt-0.5">47%</p><p class="text-xs text-slate-500 mt-0.5">8 replies received</p></div></div></div>
+        <div class="card p-5 slide-up"><div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><p class="text-slate-400 text-sm">Avg. time to follow up</p><p class="text-2xl font-bold text-amber-400 mt-0.5">1.8d</p><p class="text-xs text-slate-500 mt-0.5">after meeting</p></div></div></div>
+      </div>
+      <div class="grid grid-cols-2 gap-6">
+        <div class="card p-5"><h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Contact Status</h2>
+          <div class="space-y-3">
+            <div><div class="flex justify-between text-sm mb-1"><span class="text-slate-300">Pending</span><span class="text-slate-400">7 <span class="text-slate-600">(29%)</span></span></div><div class="w-full bg-navy-700 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-amber-500" style="width:29%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="text-slate-300">Message Sent</span><span class="text-slate-400">9 <span class="text-slate-600">(38%)</span></span></div><div class="w-full bg-navy-700 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-blue-500" style="width:38%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="text-slate-300">Replied</span><span class="text-slate-400">6 <span class="text-slate-600">(25%)</span></span></div><div class="w-full bg-navy-700 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-emerald-500" style="width:25%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="text-slate-300">In Progress</span><span class="text-slate-400">2 <span class="text-slate-600">(8%)</span></span></div><div class="w-full bg-navy-700 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-purple-500" style="width:8%"></div></div></div>
+          </div>
+        </div>
+        <div class="card p-5"><h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Top Events</h2>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3 py-2 border-b border-navy-700"><div><p class="text-slate-200 text-sm font-medium">London Tech Week</p><p class="text-slate-500 text-xs">12 contacts</p></div><div class="text-right"><p class="text-blue-400 text-sm font-medium">83%</p><p class="text-slate-500 text-xs">58% replied</p></div></div>
+            <div class="flex items-center justify-between gap-3 py-2 border-b border-navy-700"><div><p class="text-slate-200 text-sm font-medium">SaaStr Annual</p><p class="text-slate-500 text-xs">8 contacts</p></div><div class="text-right"><p class="text-blue-400 text-sm font-medium">63%</p><p class="text-slate-500 text-xs">40% replied</p></div></div>
+            <div class="flex items-center justify-between gap-3 py-2"><div><p class="text-slate-200 text-sm font-medium">YC Demo Day</p><p class="text-slate-500 text-xs">4 contacts</p></div><div class="text-right"><p class="text-blue-400 text-sm font-medium">50%</p><p class="text-slate-500 text-xs">25% replied</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== EVENTS ====== -->
+    <div id="page-events" class="max-w-3xl mx-auto p-8 fade-in hidden">
+      <div class="flex items-center justify-between mb-6">
+        <div><h1 class="text-2xl font-bold text-white">Events</h1><p class="text-slate-400 text-sm mt-0.5">3 events</p></div>
+        <button class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Event</button>
+      </div>
+      <div class="space-y-3">
+        <div class="card-hover p-5 slide-up"><div class="flex items-start justify-between gap-3"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><h3 class="font-semibold text-slate-100">London Tech Week 2026</h3></div><p class="text-slate-500 text-xs ml-10 mb-2">Jun 9–13, 2026</p><div class="flex items-center gap-4 text-xs text-slate-400 ml-10"><span>12 contacts</span><span class="text-blue-400">83% followed up</span><span class="text-emerald-400">58% replied</span></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+        <div class="card-hover p-5 slide-up"><div class="flex items-start justify-between gap-3"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><h3 class="font-semibold text-slate-100">SaaStr Annual</h3></div><p class="text-slate-500 text-xs ml-10 mb-2">May 14–16, 2026</p><div class="flex items-center gap-4 text-xs text-slate-400 ml-10"><span>8 contacts</span><span class="text-blue-400">63% followed up</span><span class="text-emerald-400">40% replied</span></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+        <div class="card-hover p-5 slide-up"><div class="flex items-start justify-between gap-3"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><h3 class="font-semibold text-slate-100">YC Demo Day S26</h3></div><p class="text-slate-500 text-xs ml-10 mb-2">Apr 3–4, 2026</p><div class="flex items-center gap-4 text-xs text-slate-400 ml-10"><span>4 contacts</span><span class="text-blue-400">50% followed up</span><span class="text-emerald-400">25% replied</span></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+      </div>
+    </div>
+
+    <!-- ====== SETTINGS ====== -->
+    <div id="page-settings" class="max-w-2xl mx-auto p-8 fade-in hidden">
+      <div class="mb-6"><h1 class="text-2xl font-bold text-white">Settings</h1><p class="text-slate-400 text-sm mt-0.5">Personalise Reachout for your workflow</p></div>
+      <div class="space-y-5">
+        <div class="card p-5 space-y-4">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Your Profile</h2>
+          <p class="text-xs text-slate-500 -mt-2">Used by the AI to write messages from your perspective.</p>
+          <div class="grid grid-cols-2 gap-3"><div><label class="lbl">Your Name</label><input placeholder="Sarah Chen" value="Sarah Chen" /></div><div><label class="lbl">Job Title</label><input placeholder="Head of Product" value="Head of Product" /></div></div>
+          <div class="grid grid-cols-2 gap-3"><div><label class="lbl">Company</label><input placeholder="Acme Corp" value="Acme Corp" /></div><div><label class="lbl">LinkedIn URL</label><input placeholder="https://linkedin.com/in/..." /></div></div>
+        </div>
+        <div class="card p-5 space-y-4">
+          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Message Style</h2>
+          <div><label class="lbl">Preferred Tone</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="p-3 rounded-lg text-sm font-medium border" style="background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:#93c5fd">Warm &amp; casual</button>
+            <button class="p-3 rounded-lg text-sm font-medium border bg-navy-700 border-navy-500 text-slate-400 hover:text-slate-200 transition-colors">Professional</button>
+            <button class="p-3 rounded-lg text-sm font-medium border bg-navy-700 border-navy-500 text-slate-400 hover:text-slate-200 transition-colors">Concise</button>
+          </div></div>
+        </div>
+        <button onclick="showToast('✓ Settings saved', '#22c55e')" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Settings</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const pages = ['dashboard', 'contact', 'add', 'analytics', 'events', 'settings'];
+  const navBtns = ['dashboard', 'events', 'analytics', 'settings'];
+
+  function showPage(name) {
+    pages.forEach(p => {
+      const el = document.getElementById('page-' + p);
+      if (el) el.classList.add('hidden');
+    });
+    const target = document.getElementById('page-' + name);
+    if (target) { target.classList.remove('hidden'); target.classList.add('fade-in'); }
+
+    navBtns.forEach(n => {
+      const btn = document.getElementById('nav-' + n);
+      if (!btn) return;
+      if (n === name) {
+        btn.classList.remove('inactive-nav'); btn.classList.add('active-nav');
+      } else {
+        btn.classList.remove('active-nav'); btn.classList.add('inactive-nav');
+      }
+    });
+  }
+
+  function showContact(id) {
+    showPage('contact');
+    document.getElementById('msg-empty').classList.remove('hidden');
+    document.getElementById('msg-grid').classList.add('hidden');
+    const btn = document.getElementById('gen-btn');
+    btn.textContent = '';
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Messages';
+  }
+
+  function simulateGenerate() {
+    const btn = document.getElementById('gen-btn');
+    btn.innerHTML = '<span style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;display:inline-block;animation:spin .7s linear infinite"></span> Generating...';
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin { to { transform: rotate(360deg) } }';
+    document.head.appendChild(style);
+
+    setTimeout(() => {
+      document.getElementById('msg-empty').classList.add('hidden');
+      document.getElementById('msg-grid').classList.remove('hidden');
+      document.getElementById('msg-grid').classList.add('slide-up');
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate All';
+      showToast('✓ 3 messages generated', '#22c55e');
+    }, 1800);
+  }
+
+  function copyMsg(btn) {
+    const original = btn.innerHTML;
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    btn.style.color = '#34d399';
+    setTimeout(() => { btn.innerHTML = original; btn.style.color = ''; }, 1800);
+    showToast('✓ Copied to clipboard', '#22c55e');
+  }
+
+  function markSent(btn) {
+    const card = btn.closest('.card');
+    const header = card.querySelector('.flex.items-center.gap-2');
+    const existingSent = header.querySelector('.sent-badge');
+    if (!existingSent) {
+      const badge = document.createElement('span');
+      badge.className = 'sent-badge ml-auto text-xs text-emerald-400 flex items-center gap-1';
+      badge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sent today';
+      header.appendChild(badge);
+    }
+    btn.remove();
+    showToast('✓ Marked as sent!', '#22c55e');
+  }
+
+  let toastTimer;
+  function showToast(msg, color) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+    container.innerHTML = '';
+    container.appendChild(toast);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { container.innerHTML = ''; }, 2500);
+  }
+</script>
+</body>
+</html>
