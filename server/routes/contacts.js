@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const db = require('../db');
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -177,14 +177,14 @@ Rules:
 - Return ONLY the JSON object, no markdown fences or explanation`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const response = await client.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-5',
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const response = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    let raw = response.content[0].text.trim();
+    let raw = response.choices[0].message.content.trim();
     // Strip markdown code fences if present
     raw = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
 
