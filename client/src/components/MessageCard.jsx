@@ -81,8 +81,8 @@ export default function MessageCard({ contactId, contactEmail, type, message, on
     const firstBreak = content.indexOf('\n\n');
     const subject = content.substring(0, firstBreak).replace(/^Subject:\s*/i, '').trim();
     const body = content.substring(firstBreak + 2).trim();
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(contactEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(gmailUrl, '_blank');
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contactEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = gmailUrl;
   }
 
   async function handleSaveNote() {
