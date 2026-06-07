@@ -77,18 +77,12 @@ export default function MessageCard({ contactId, contactEmail, type, message, on
     }
   }
 
-  async function handleSendEmail() {
-    setSending(true);
-    try {
-      await sendEmailMessage(contactId);
-      toast.success(`Email sent to ${contactEmail}!`);
-      const updated = await import('../api').then(m => m.markMessageSent(contactId, type));
-      onUpdate(type, updated);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setSending(false);
-    }
+  function handleOpenEmail() {
+    const firstBreak = content.indexOf('\n\n');
+    const subject = content.substring(0, firstBreak).replace(/^Subject:\s*/i, '').trim();
+    const body = content.substring(firstBreak + 2).trim();
+    const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, '_blank');
   }
 
   async function handleSaveNote() {
@@ -214,12 +208,12 @@ export default function MessageCard({ contactId, contactEmail, type, message, on
               Regenerate
             </button>
             {!message.sent_at && type === 'email' && contactEmail && (
-              <button onClick={handleSendEmail} disabled={sending} className="btn-ghost text-xs text-emerald-400 hover:text-emerald-300 font-medium">
-                <Send size={12} /> {sending ? 'Sending...' : `Send to ${contactEmail}`}
+              <button onClick={handleOpenEmail} className="btn-ghost text-xs text-emerald-400 hover:text-emerald-300 font-medium">
+                <Mail size={12} /> Open in email app
               </button>
             )}
-            {!message.sent_at && (type !== 'email' || !contactEmail) && (
-              <button onClick={handleMarkSent} className="btn-ghost text-xs text-emerald-400 hover:text-emerald-300">
+            {!message.sent_at && (
+              <button onClick={handleMarkSent} className="btn-ghost text-xs text-slate-400 hover:text-slate-200">
                 <Send size={12} /> Mark sent
               </button>
             )}
