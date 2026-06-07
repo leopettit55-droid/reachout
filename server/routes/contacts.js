@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const nodemailer = require('nodemailer');
 const db = require('../db');
 const Groq = require('groq-sdk');
 
@@ -263,6 +264,50 @@ router.put('/:id/status', (req, res) => {
   if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
   db.prepare(`UPDATE contacts SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, req.params.id);
   res.json(getContactWithMessages(req.params.id));
+});
+
+// POST send email directly
+router.post('/:id/messages/email/send', async (req, res) => {
+  const contact = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
+  if (!contact) return res.status(404).json({ error: 'Contact not found' });
+  if (!contact.email) return res.status(400).json({ error: 'This contact has no email address. Add one by editing the contact.' });
+
+  const message = db.prepare('SELECT * FROM messages WHERE contact_id = ? AND type = ?').get(req.params.id, 'email');
+  if (!message?.content) return res.status(404).json({ error: 'No email message generated yet. Click Generate Messages first.' });
+
+  const settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
+  if (!settings?.smtp_host || !settings?.smtp_user) {
+    return res.status(400).json({ error: 'Email not configured. Go to Settings and fill in your SMTP details.' });
+  }
+
+  // Parse "Subject: ...\n\nbody..." format
+  const firstNewline = message.content.indexOf('\n\n');
+  const subjectLine = message.content.substring(0, firstNewline).replace(/^Subject:\s*/i, '').trim();
+  const body = message.content.substring(firstNewline + 2).trim();
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: settings.smtp_host,
+      port: settings.smtp_port || 587,
+      secure: settings.smtp_port === 465,
+      auth: { user: settings.smtp_user, pass: settings.smtp_pass }
+    });
+
+    await transporter.sendMail({
+      from: `${settings.user_name || 'Reachout'} <${settings.smtp_user}>`,
+      to: contact.email,
+      subject: subjectLine,
+      text: body
+    });
+
+    // Auto mark as sent
+    db.prepare(`UPDATE messages SET sent_at = datetime('now'), updated_at = datetime('now') WHERE contact_id = ? AND type = 'email'`).run(req.params.id);
+    db.prepare(`UPDATE contacts SET status = 'Message Sent', updated_at = datetime('now') WHERE id = ? AND status = 'Pending'`).run(req.params.id);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to send: ${error.message}` });
+  }
 });
 
 module.exports = router;

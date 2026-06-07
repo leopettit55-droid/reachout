@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Check, Send, RefreshCw, Edit3, X, Save, MessageSquare, Mail, Linkedin } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
-import { updateMessage, markMessageSent, addResponseNote } from '../api';
+import { updateMessage, markMessageSent, addResponseNote, sendEmailMessage } from '../api';
 
 const TYPE_CONFIG = {
   linkedin_connection: {
@@ -29,11 +29,12 @@ const TYPE_CONFIG = {
   },
 };
 
-export default function MessageCard({ contactId, type, message, onUpdate, onRegenerate, regenerating }) {
+export default function MessageCard({ contactId, contactEmail, type, message, onUpdate, onRegenerate, regenerating }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [note, setNote] = useState(message?.response_note || '');
   const [markReplied, setMarkReplied] = useState(false);
@@ -73,6 +74,20 @@ export default function MessageCard({ contactId, type, message, onUpdate, onRege
       toast.success('Marked as sent!');
     } catch (err) {
       toast.error(err.message);
+    }
+  }
+
+  async function handleSendEmail() {
+    setSending(true);
+    try {
+      await sendEmailMessage(contactId);
+      toast.success(`Email sent to ${contactEmail}!`);
+      const updated = await import('../api').then(m => m.markMessageSent(contactId, type));
+      onUpdate(type, updated);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -198,7 +213,12 @@ export default function MessageCard({ contactId, type, message, onUpdate, onRege
               <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} />
               Regenerate
             </button>
-            {!message.sent_at && (
+            {!message.sent_at && type === 'email' && contactEmail && (
+              <button onClick={handleSendEmail} disabled={sending} className="btn-ghost text-xs text-emerald-400 hover:text-emerald-300 font-medium">
+                <Send size={12} /> {sending ? 'Sending...' : `Send to ${contactEmail}`}
+              </button>
+            )}
+            {!message.sent_at && (type !== 'email' || !contactEmail) && (
               <button onClick={handleMarkSent} className="btn-ghost text-xs text-emerald-400 hover:text-emerald-300">
                 <Send size={12} /> Mark sent
               </button>

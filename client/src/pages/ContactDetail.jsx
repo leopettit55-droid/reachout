@@ -254,6 +254,7 @@ export default function ContactDetail({ onMenuClick }) {
             <MessageCard
               key={type}
               contactId={id}
+              contactEmail={contact.email}
               type={type}
               message={contact.messages?.[type]}
               onUpdate={handleMessageUpdate}

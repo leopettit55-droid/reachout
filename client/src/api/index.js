@@ -36,6 +36,8 @@ export const markMessageSent = (contactId, type) =>
   req(`/contacts/${contactId}/messages/${type}/mark-sent`, { method: 'POST' });
 export const addResponseNote = (contactId, type, response_note, mark_replied) =>
   req(`/contacts/${contactId}/messages/${type}/response`, { method: 'PUT', body: JSON.stringify({ response_note, mark_replied }) });
+export const sendEmailMessage = (contactId) =>
+  req(`/contacts/${contactId}/messages/email/send`, { method: 'POST' });
 export const updateContactStatus = (id, status) =>
   req(`/contacts/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
 
